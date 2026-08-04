@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Consumer used by smoke tests. Imports LibraryReference props/targets from sibling src
+    (not via NuGet) so local iteration does not require a packed feed.
+  -->
+  <Import Project="..\..\..\src\Novolis.MSBuild.LibraryReference\build\Novolis.MSBuild.LibraryReference.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <LibraryReferenceDefaultVersion>*</LibraryReferenceDefaultVersion>
+  </PropertyGroup>
+
+  <!-- Scenario selected via /p:LibraryRefSmokeScenario=... -->
+  <ItemGroup Condition="'$(LibraryRefSmokeScenario)' == 'ExplicitProject'">
+    <LibraryReference Include="Novolis.MSBuild.Fixtures.Provider"
+                      Version="1.2.3"
+                      ProjectPath="$(MSBuildThisFileDirectory)..\Provider\Provider.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(LibraryRefSmokeScenario)' == 'MissingProject'">
+    <LibraryReference Include="Novolis.MSBuild.Fixtures.DoesNotExist"
+                      Version="9.9.9"
+                      ProjectPath="$(MSBuildThisFileDirectory)..\Provider\Missing.DoesNotExist.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(LibraryRefSmokeScenario)' == 'MapProject'">
+    <LibraryProjectMap Include="Novolis.MSBuild.Fixtures.Provider">
+      <ProjectPath>$(MSBuildThisFileDirectory)..\Provider\Provider.csproj</ProjectPath>
+    </LibraryProjectMap>
+    <LibraryReference Include="Novolis.MSBuild.Fixtures.Provider" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(LibraryRefSmokeScenario)' == 'DefaultVersion'">
+    <LibraryReference Include="Novolis.MSBuild.Fixtures.DoesNotExist"
+                      ProjectPath="$(MSBuildThisFileDirectory)..\Provider\Missing.DoesNotExist.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\..\..\src\Novolis.MSBuild.LibraryReference\build\Novolis.MSBuild.LibraryReference.targets" />
+</Project>

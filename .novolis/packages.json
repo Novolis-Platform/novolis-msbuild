@@ -1,0 +1,8 @@
+{
+  "packages": {
+    "Novolis.MSBuild.LibraryReference": {
+      "path": "src/Novolis.MSBuild.LibraryReference",
+      "description": "LibraryReference MSBuild item (project if present, else package)"
+    }
+  }
+}

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!--
+    Expand @(LibraryReference) before NuGet collects package refs.
+
+    Resolution (no batched Update — avoids cross-item metadata mixups):
+      1. Explicit ProjectPath that Exists and is not self → ProjectReference.
+      2. Else if ProjectPath empty: LibraryProjectMap ∩ LibraryReference, Exists → ProjectReference.
+      3. Else → PackageReference; Version = item Version or $(LibraryReferenceDefaultVersion).
+         CPM: bare PackageReference + PackageVersion when no PackageVersion row exists yet.
+  -->
+
+  <Target Name="ExpandLibraryReferences"
+          BeforeTargets="CollectPackageReferences;ResolvePackageAssets;Restore;ResolvePackageFileConflicts"
+          Condition="'$(LibraryReferenceEnabled)' == 'true' and '@(LibraryReference)' != ''">
+    <ItemGroup>
+      <!-- Fill empty Version with the default float before emitting package refs. -->
+      <LibraryReference Update="@(LibraryReference)"
+                        Condition="'%(LibraryReference.Version)' == ''"
+                        Version="$(LibraryReferenceDefaultVersion)" />
+
+      <!-- Explicit paths that resolve to a real project. -->
+      <_LibraryRefAsProject Include="@(LibraryReference)"
+                            Condition="'%(LibraryReference.ProjectPath)' != ''
+                                       and Exists('%(LibraryReference.ProjectPath)')
+                                       and $([System.IO.Path]::GetFullPath('%(LibraryReference.ProjectPath)')) != $([System.IO.Path]::GetFullPath('$(MSBuildProjectFullPath)'))" />
+
+      <!-- Map join: LibraryReferences with no ProjectPath, intersected with LibraryProjectMap. -->
+      <_LibraryRefNeedMap Include="@(LibraryReference)"
+                          Condition="'%(LibraryReference.ProjectPath)' == ''" />
+      <_LibraryMapUnused Include="@(LibraryProjectMap)" />
+      <_LibraryMapUnused Remove="@(_LibraryRefNeedMap)" />
+      <_LibraryMapHit Include="@(LibraryProjectMap)" />
+      <_LibraryMapHit Remove="@(_LibraryMapUnused)" />
+      <_LibraryRefFromMap Include="@(_LibraryMapHit)"
+                          Condition="'%(_LibraryMapHit.ProjectPath)' != ''
+                                     and Exists('%(_LibraryMapHit.ProjectPath)')
+                                     and $([System.IO.Path]::GetFullPath('%(_LibraryMapHit.ProjectPath)')) != $([System.IO.Path]::GetFullPath('$(MSBuildProjectFullPath)'))" />
+
+      <!-- Package fallback: everything not taken as an explicit or mapped project. -->
+      <_LibraryRefAsPackage Include="@(LibraryReference)" />
+      <_LibraryRefAsPackage Remove="@(_LibraryRefAsProject)" />
+      <_LibraryRefAsPackage Remove="@(_LibraryRefFromMap)" />
+
+      <ProjectReference Include="%(_LibraryRefAsProject.ProjectPath)"
+                        Condition="'%(_LibraryRefAsProject.ProjectPath)' != ''">
+        <PrivateAssets Condition="'%(_LibraryRefAsProject.PrivateAssets)' != ''">%(_LibraryRefAsProject.PrivateAssets)</PrivateAssets>
+        <IncludeAssets Condition="'%(_LibraryRefAsProject.IncludeAssets)' != ''">%(_LibraryRefAsProject.IncludeAssets)</IncludeAssets>
+        <ExcludeAssets Condition="'%(_LibraryRefAsProject.ExcludeAssets)' != ''">%(_LibraryRefAsProject.ExcludeAssets)</ExcludeAssets>
+        <ReferenceOutputAssembly Condition="'%(_LibraryRefAsProject.ReferenceOutputAssembly)' != ''">%(_LibraryRefAsProject.ReferenceOutputAssembly)</ReferenceOutputAssembly>
+        <OutputItemType Condition="'%(_LibraryRefAsProject.OutputItemType)' != ''">%(_LibraryRefAsProject.OutputItemType)</OutputItemType>
+        <Aliases Condition="'%(_LibraryRefAsProject.Aliases)' != ''">%(_LibraryRefAsProject.Aliases)</Aliases>
+        <SetConfiguration Condition="'%(_LibraryRefAsProject.SetConfiguration)' != ''">%(_LibraryRefAsProject.SetConfiguration)</SetConfiguration>
+        <SetPlatform Condition="'%(_LibraryRefAsProject.SetPlatform)' != ''">%(_LibraryRefAsProject.SetPlatform)</SetPlatform>
+        <GlobalPropertiesToRemove Condition="'%(_LibraryRefAsProject.GlobalPropertiesToRemove)' != ''">%(_LibraryRefAsProject.GlobalPropertiesToRemove)</GlobalPropertiesToRemove>
+      </ProjectReference>
+
+      <ProjectReference Include="%(_LibraryRefFromMap.ProjectPath)"
+                        Condition="'%(_LibraryRefFromMap.ProjectPath)' != ''" />
+
+      <!-- Non-CPM: Version on PackageReference. -->
+      <PackageReference Include="@(_LibraryRefAsPackage)"
+                        Condition="'$(ManagePackageVersionsCentrally)' != 'true' and '@(_LibraryRefAsPackage)' != ''"
+                        Version="%(_LibraryRefAsPackage.Version)">
+        <PrivateAssets Condition="'%(_LibraryRefAsPackage.PrivateAssets)' != ''">%(_LibraryRefAsPackage.PrivateAssets)</PrivateAssets>
+        <IncludeAssets Condition="'%(_LibraryRefAsPackage.IncludeAssets)' != ''">%(_LibraryRefAsPackage.IncludeAssets)</IncludeAssets>
+        <ExcludeAssets Condition="'%(_LibraryRefAsPackage.ExcludeAssets)' != ''">%(_LibraryRefAsPackage.ExcludeAssets)</ExcludeAssets>
+        <GeneratePathProperty Condition="'%(_LibraryRefAsPackage.GeneratePathProperty)' != ''">%(_LibraryRefAsPackage.GeneratePathProperty)</GeneratePathProperty>
+        <Aliases Condition="'%(_LibraryRefAsPackage.Aliases)' != ''">%(_LibraryRefAsPackage.Aliases)</Aliases>
+      </PackageReference>
+
+      <!-- CPM: PackageReference without Version. -->
+      <PackageReference Include="@(_LibraryRefAsPackage)"
+                        Condition="'$(ManagePackageVersionsCentrally)' == 'true' and '@(_LibraryRefAsPackage)' != ''">
+        <PrivateAssets Condition="'%(_LibraryRefAsPackage.PrivateAssets)' != ''">%(_LibraryRefAsPackage.PrivateAssets)</PrivateAssets>
+        <IncludeAssets Condition="'%(_LibraryRefAsPackage.IncludeAssets)' != ''">%(_LibraryRefAsPackage.IncludeAssets)</IncludeAssets>
+        <ExcludeAssets Condition="'%(_LibraryRefAsPackage.ExcludeAssets)' != ''">%(_LibraryRefAsPackage.ExcludeAssets)</ExcludeAssets>
+        <GeneratePathProperty Condition="'%(_LibraryRefAsPackage.GeneratePathProperty)' != ''">%(_LibraryRefAsPackage.GeneratePathProperty)</GeneratePathProperty>
+        <Aliases Condition="'%(_LibraryRefAsPackage.Aliases)' != ''">%(_LibraryRefAsPackage.Aliases)</Aliases>
+      </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true' and '@(_LibraryRefAsPackage)' != ''">
+      <_LibraryRefNeedPackageVersion Include="@(_LibraryRefAsPackage)" />
+      <_LibraryRefNeedPackageVersion Remove="@(PackageVersion)" />
+      <PackageVersion Include="@(_LibraryRefNeedPackageVersion)"
+                      Version="%(_LibraryRefNeedPackageVersion.Version)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <LibraryReference Remove="@(LibraryReference)" />
+      <_LibraryRefAsProject Remove="@(_LibraryRefAsProject)" />
+      <_LibraryRefFromMap Remove="@(_LibraryRefFromMap)" />
+      <_LibraryRefNeedMap Remove="@(_LibraryRefNeedMap)" />
+      <_LibraryMapUnused Remove="@(_LibraryMapUnused)" />
+      <_LibraryMapHit Remove="@(_LibraryMapHit)" />
+      <_LibraryRefAsPackage Remove="@(_LibraryRefAsPackage)" />
+      <_LibraryRefNeedPackageVersion Remove="@(_LibraryRefNeedPackageVersion)" />
+    </ItemGroup>
+  </Target>
+</Project>

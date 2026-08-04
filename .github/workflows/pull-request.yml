@@ -1,0 +1,23 @@
+name: Pull request
+on:
+  pull_request:
+    branches: [main]
+concurrency:
+  group: pr-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  ci:
+    uses: Novolis-Platform/novolis-workflows/.github/workflows/dotnet-pull-request.yml@main
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: read
+  libraryreference-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: LibraryReference smoke
+        run: pwsh -File tests/LibraryReference.Smoke.ps1

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!--
+    LibraryReference: single committed dependency item that expands to ProjectReference
+    when a local .csproj exists, otherwise PackageReference (Version or default float).
+  -->
+  <PropertyGroup>
+    <LibraryReferenceEnabled Condition="'$(LibraryReferenceEnabled)' == ''">true</LibraryReferenceEnabled>
+    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == ''">*</LibraryReferenceDefaultVersion>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <LibraryReference>
+      <Version></Version>
+      <ProjectPath></ProjectPath>
+    </LibraryReference>
+    <LibraryProjectMap>
+      <ProjectPath></ProjectPath>
+    </LibraryProjectMap>
+  </ItemDefinitionGroup>
+</Project>
