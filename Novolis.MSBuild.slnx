@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Novolis.MSBuild.LibraryReference/Novolis.MSBuild.LibraryReference.csproj" />
+  </Folder>
+</Solution>
