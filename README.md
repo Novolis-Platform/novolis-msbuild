@@ -1,3 +1,17 @@
+<!-- novolis-package-index:start -->
+> **GitHub Packages shows this repository README on every package page** (upstream limitation).
+> Open the **package README** for install and quick start — embedded in each .nupkg and linked below.
+
+## Published packages
+
+| Package | Install | Package README |
+|---------|---------|----------------|
+| `Novolis.MSBuild.LibraryReference` | `dotnet add package Novolis.MSBuild.LibraryReference` | [README](https://github.com/Novolis-Platform/novolis-msbuild/blob/main/src/Novolis.MSBuild.LibraryReference/README.md) |
+
+For NuGet.org and Visual Studio, the **embedded** README.md inside each package is authoritative.
+
+<!-- novolis-package-index:end -->
+
 <!-- novolis-marketing:start -->
 <p align="center">
   <a href="https://github.com/Novolis-Platform">

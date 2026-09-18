@@ -1,3 +1,11 @@
+<!-- novolis-pkg-brand:start -->
+<p align="center">
+  <a href="https://github.com/Novolis-Platform/novolis-msbuild">
+    <img src="https://raw.githubusercontent.com/Novolis-Platform/.github/main/brand/logo-icon.svg" width="72" alt="Novolis"/>
+  </a>
+</p>
+<!-- novolis-pkg-brand:end -->
+
 # Novolis.MSBuild.LibraryReference
 
 MSBuild package that provides a single `LibraryReference` item for dependencies that should use a local `ProjectReference` when the project exists, otherwise a `PackageReference`.
@@ -58,3 +66,4 @@ Floating versions require NuGet floating versions (Novolis enables `CentralPacka
 - Same non-transitive caveat as ProjectReference mode: replacing a package with a project drops NuGet transitive closure. Reference needed dependencies explicitly.
 - Common `PackageReference` / `ProjectReference` metadata (`PrivateAssets`, `IncludeAssets`, `ExcludeAssets`, `OutputItemType`, …) is forwarded when set.
 - Committed `.csproj` files should use `LibraryReference` (or `PackageReference`); do not commit cross-repo `ProjectReference` paths.
+
