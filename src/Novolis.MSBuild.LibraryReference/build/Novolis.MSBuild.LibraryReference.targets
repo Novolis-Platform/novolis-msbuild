@@ -1,101 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
   <!--
-    Expand @(LibraryReference) before NuGet collects package refs.
+    Expand @(LibraryReference) at evaluation time so NuGet static-graph restore
+    sees the resulting ProjectReference / PackageReference items.
 
-    Resolution (no batched Update — avoids cross-item metadata mixups):
-      1. Explicit ProjectPath that Exists and is not self → ProjectReference.
-      2. Else if ProjectPath empty: LibraryProjectMap ∩ LibraryReference, Exists → ProjectReference.
-      3. Else → PackageReference; Version = item Version or $(LibraryReferenceDefaultVersion).
-         CPM: bare PackageReference + PackageVersion when no PackageVersion row exists yet.
+    Must not be a Target: Target-added ProjectReferences are used at build but
+    never restored (NETSDK1004 missing project.assets.json). Evaluation also
+    forbids %(metadata) in Condition (MSB4190); use transforms, Remove, and
+    WithMetadataValue instead.
+
+    Resolution:
+      1. Empty Version → $(LibraryReferenceDefaultVersion).
+      2. Empty ProjectPath: LibraryProjectMap ∩ LibraryReference → stamp ProjectPath.
+      3. File.Exists(ProjectPath) (metadata + WithMetadataValue).
+      4. Exists and not self → ProjectReference (metadata copied).
+      5. Else → PackageReference; CPM: PackageVersion when no central row exists.
   -->
 
-  <Target Name="ExpandLibraryReferences"
-          BeforeTargets="CollectPackageReferences;ResolvePackageAssets;Restore;ResolvePackageFileConflicts"
-          Condition="'$(LibraryReferenceEnabled)' == 'true' and '@(LibraryReference)' != ''">
-    <ItemGroup>
-      <!-- Fill empty Version with the default float before emitting package refs. -->
-      <LibraryReference Update="@(LibraryReference)"
-                        Condition="'%(LibraryReference.Version)' == ''"
-                        Version="$(LibraryReferenceDefaultVersion)" />
+  <PropertyGroup>
+    <LibraryReferenceEnabled Condition="'$(LibraryReferenceEnabled)' == ''">true</LibraryReferenceEnabled>
+    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == ''">*</LibraryReferenceDefaultVersion>
+  </PropertyGroup>
 
-      <!-- Explicit paths that resolve to a real project. -->
-      <_LibraryRefAsProject Include="@(LibraryReference)"
-                            Condition="'%(LibraryReference.ProjectPath)' != ''
-                                       and Exists('%(LibraryReference.ProjectPath)')
-                                       and $([System.IO.Path]::GetFullPath('%(LibraryReference.ProjectPath)')) != $([System.IO.Path]::GetFullPath('$(MSBuildProjectFullPath)'))" />
+  <ItemGroup Condition="'$(LibraryReferenceEnabled)' == 'true' and '@(LibraryReference)' != ''">
+    <LibraryReference Update="@(LibraryReference->WithMetadataValue('Version', ''))">
+      <Version>$(LibraryReferenceDefaultVersion)</Version>
+    </LibraryReference>
 
-      <!-- Map join: LibraryReferences with no ProjectPath, intersected with LibraryProjectMap. -->
-      <_LibraryRefNeedMap Include="@(LibraryReference)"
-                          Condition="'%(LibraryReference.ProjectPath)' == ''" />
-      <_LibraryMapUnused Include="@(LibraryProjectMap)" />
-      <_LibraryMapUnused Remove="@(_LibraryRefNeedMap)" />
-      <_LibraryMapHit Include="@(LibraryProjectMap)" />
-      <_LibraryMapHit Remove="@(_LibraryMapUnused)" />
-      <_LibraryRefFromMap Include="@(_LibraryMapHit)"
-                          Condition="'%(_LibraryMapHit.ProjectPath)' != ''
-                                     and Exists('%(_LibraryMapHit.ProjectPath)')
-                                     and $([System.IO.Path]::GetFullPath('%(_LibraryMapHit.ProjectPath)')) != $([System.IO.Path]::GetFullPath('$(MSBuildProjectFullPath)'))" />
+    <_NovolisLrNeedMap Include="@(LibraryReference->WithMetadataValue('ProjectPath', ''))" />
+    <_NovolisLrMapUnused Include="@(LibraryProjectMap)" />
+    <_NovolisLrMapUnused Remove="@(_NovolisLrNeedMap)" />
+    <_NovolisLrMapHit Include="@(LibraryProjectMap)" />
+    <_NovolisLrMapHit Remove="@(_NovolisLrMapUnused)" />
+    <LibraryReference Update="@(_NovolisLrMapHit)">
+      <ProjectPath>%(_NovolisLrMapHit.ProjectPath)</ProjectPath>
+    </LibraryReference>
 
-      <!-- Package fallback: everything not taken as an explicit or mapped project. -->
-      <_LibraryRefAsPackage Include="@(LibraryReference)" />
-      <_LibraryRefAsPackage Remove="@(_LibraryRefAsProject)" />
-      <_LibraryRefAsPackage Remove="@(_LibraryRefFromMap)" />
+    <LibraryReference Update="@(LibraryReference)">
+      <_NovolisLrExists>$([System.IO.File]::Exists('%(ProjectPath)'))</_NovolisLrExists>
+    </LibraryReference>
 
-      <ProjectReference Include="%(_LibraryRefAsProject.ProjectPath)"
-                        Condition="'%(_LibraryRefAsProject.ProjectPath)' != ''">
-        <PrivateAssets Condition="'%(_LibraryRefAsProject.PrivateAssets)' != ''">%(_LibraryRefAsProject.PrivateAssets)</PrivateAssets>
-        <IncludeAssets Condition="'%(_LibraryRefAsProject.IncludeAssets)' != ''">%(_LibraryRefAsProject.IncludeAssets)</IncludeAssets>
-        <ExcludeAssets Condition="'%(_LibraryRefAsProject.ExcludeAssets)' != ''">%(_LibraryRefAsProject.ExcludeAssets)</ExcludeAssets>
-        <ReferenceOutputAssembly Condition="'%(_LibraryRefAsProject.ReferenceOutputAssembly)' != ''">%(_LibraryRefAsProject.ReferenceOutputAssembly)</ReferenceOutputAssembly>
-        <OutputItemType Condition="'%(_LibraryRefAsProject.OutputItemType)' != ''">%(_LibraryRefAsProject.OutputItemType)</OutputItemType>
-        <Aliases Condition="'%(_LibraryRefAsProject.Aliases)' != ''">%(_LibraryRefAsProject.Aliases)</Aliases>
-        <SetConfiguration Condition="'%(_LibraryRefAsProject.SetConfiguration)' != ''">%(_LibraryRefAsProject.SetConfiguration)</SetConfiguration>
-        <SetPlatform Condition="'%(_LibraryRefAsProject.SetPlatform)' != ''">%(_LibraryRefAsProject.SetPlatform)</SetPlatform>
-        <GlobalPropertiesToRemove Condition="'%(_LibraryRefAsProject.GlobalPropertiesToRemove)' != ''">%(_LibraryRefAsProject.GlobalPropertiesToRemove)</GlobalPropertiesToRemove>
-      </ProjectReference>
+    <_NovolisLrAsProject Include="@(LibraryReference->WithMetadataValue('_NovolisLrExists', 'True'))" />
+    <_NovolisLrAsPackage Include="@(LibraryReference->WithMetadataValue('_NovolisLrExists', 'False'))" />
 
-      <ProjectReference Include="%(_LibraryRefFromMap.ProjectPath)"
-                        Condition="'%(_LibraryRefFromMap.ProjectPath)' != ''" />
+    <ProjectReference Include="@(_NovolisLrAsProject->'%(ProjectPath)')" />
+    <ProjectReference Remove="$(MSBuildProjectFullPath)" />
+  </ItemGroup>
 
-      <!-- Non-CPM: Version on PackageReference. -->
-      <PackageReference Include="@(_LibraryRefAsPackage)"
-                        Condition="'$(ManagePackageVersionsCentrally)' != 'true' and '@(_LibraryRefAsPackage)' != ''"
-                        Version="%(_LibraryRefAsPackage.Version)">
-        <PrivateAssets Condition="'%(_LibraryRefAsPackage.PrivateAssets)' != ''">%(_LibraryRefAsPackage.PrivateAssets)</PrivateAssets>
-        <IncludeAssets Condition="'%(_LibraryRefAsPackage.IncludeAssets)' != ''">%(_LibraryRefAsPackage.IncludeAssets)</IncludeAssets>
-        <ExcludeAssets Condition="'%(_LibraryRefAsPackage.ExcludeAssets)' != ''">%(_LibraryRefAsPackage.ExcludeAssets)</ExcludeAssets>
-        <GeneratePathProperty Condition="'%(_LibraryRefAsPackage.GeneratePathProperty)' != ''">%(_LibraryRefAsPackage.GeneratePathProperty)</GeneratePathProperty>
-        <Aliases Condition="'%(_LibraryRefAsPackage.Aliases)' != ''">%(_LibraryRefAsPackage.Aliases)</Aliases>
-      </PackageReference>
+  <!-- ItemGroup Condition so Include is not parsed when inactive (item-level Condition still evaluates Include). -->
+  <ItemGroup Condition="'$(LibraryReferenceEnabled)' == 'true' and '@(_NovolisLrAsPackage)' != '' and '$(ManagePackageVersionsCentrally)' != 'true'">
+    <PackageReference Include="@(_NovolisLrAsPackage)" />
+  </ItemGroup>
 
-      <!-- CPM: PackageReference without Version. -->
-      <PackageReference Include="@(_LibraryRefAsPackage)"
-                        Condition="'$(ManagePackageVersionsCentrally)' == 'true' and '@(_LibraryRefAsPackage)' != ''">
-        <PrivateAssets Condition="'%(_LibraryRefAsPackage.PrivateAssets)' != ''">%(_LibraryRefAsPackage.PrivateAssets)</PrivateAssets>
-        <IncludeAssets Condition="'%(_LibraryRefAsPackage.IncludeAssets)' != ''">%(_LibraryRefAsPackage.IncludeAssets)</IncludeAssets>
-        <ExcludeAssets Condition="'%(_LibraryRefAsPackage.ExcludeAssets)' != ''">%(_LibraryRefAsPackage.ExcludeAssets)</ExcludeAssets>
-        <GeneratePathProperty Condition="'%(_LibraryRefAsPackage.GeneratePathProperty)' != ''">%(_LibraryRefAsPackage.GeneratePathProperty)</GeneratePathProperty>
-        <Aliases Condition="'%(_LibraryRefAsPackage.Aliases)' != ''">%(_LibraryRefAsPackage.Aliases)</Aliases>
-      </PackageReference>
-    </ItemGroup>
+  <ItemGroup Condition="'$(LibraryReferenceEnabled)' == 'true' and '@(_NovolisLrAsPackage)' != '' and '$(ManagePackageVersionsCentrally)' == 'true'">
+    <_NovolisLrNeedPackageVersion Include="@(_NovolisLrAsPackage)" />
+    <_NovolisLrNeedPackageVersion Remove="@(PackageVersion)" />
+    <PackageVersion Include="@(_NovolisLrNeedPackageVersion)" />
+    <_NovolisLrAsPackage Update="@(_NovolisLrAsPackage)">
+      <Version></Version>
+    </_NovolisLrAsPackage>
+    <PackageReference Include="@(_NovolisLrAsPackage)" />
+  </ItemGroup>
 
-    <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true' and '@(_LibraryRefAsPackage)' != ''">
-      <_LibraryRefNeedPackageVersion Include="@(_LibraryRefAsPackage)" />
-      <_LibraryRefNeedPackageVersion Remove="@(PackageVersion)" />
-      <PackageVersion Include="@(_LibraryRefNeedPackageVersion)"
-                      Version="%(_LibraryRefNeedPackageVersion.Version)" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <LibraryReference Remove="@(LibraryReference)" />
-      <_LibraryRefAsProject Remove="@(_LibraryRefAsProject)" />
-      <_LibraryRefFromMap Remove="@(_LibraryRefFromMap)" />
-      <_LibraryRefNeedMap Remove="@(_LibraryRefNeedMap)" />
-      <_LibraryMapUnused Remove="@(_LibraryMapUnused)" />
-      <_LibraryMapHit Remove="@(_LibraryMapHit)" />
-      <_LibraryRefAsPackage Remove="@(_LibraryRefAsPackage)" />
-      <_LibraryRefNeedPackageVersion Remove="@(_LibraryRefNeedPackageVersion)" />
-    </ItemGroup>
-  </Target>
+  <ItemGroup Condition="'$(LibraryReferenceEnabled)' == 'true' and '@(LibraryReference)' != ''">
+    <LibraryReference Remove="@(LibraryReference)" />
+    <_NovolisLrNeedMap Remove="@(_NovolisLrNeedMap)" />
+    <_NovolisLrMapUnused Remove="@(_NovolisLrMapUnused)" />
+    <_NovolisLrMapHit Remove="@(_NovolisLrMapHit)" />
+    <_NovolisLrAsProject Remove="@(_NovolisLrAsProject)" />
+    <_NovolisLrAsPackage Remove="@(_NovolisLrAsPackage)" />
+    <_NovolisLrNeedPackageVersion Remove="@(_NovolisLrNeedPackageVersion)" />
+  </ItemGroup>
 </Project>

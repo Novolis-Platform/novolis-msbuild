@@ -1,0 +1,3 @@
+<Project>
+  <!-- Isolate fixtures from repo Directory.Build.targets (governance LibraryReferenceDefaultVersion). -->
+</Project>

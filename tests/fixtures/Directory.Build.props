@@ -1,0 +1,6 @@
+<Project>
+  <!--
+    Isolate fixtures from the repo Directory.Build.props (SourceLink + CPM).
+    Smoke restore/build must not inherit Microsoft.SourceLink.GitHub without a version.
+  -->
+</Project>

@@ -7,7 +7,7 @@ Cross-repo libraries need one committed declaration that works for:
 - **Local multi-repo iteration** — compile against sibling source when the project is checked out
 - **CI / single-repo consumers** — restore from NuGet when the sibling project is absent
 
-Novolis historically keeps committed `PackageReference` only and optionally rewrites to `ProjectReference` in [ProjectReference mode](https://github.com/Novolis-Platform/novolis-governance/blob/main/docs/platform-project-ref-mode.md). `LibraryReference` inverts that: the committed item *is* the dependency; expansion chooses project vs package at build time.
+Novolis historically keeps committed `PackageReference` only and optionally rewrites to `ProjectReference` in [ProjectReference mode](https://github.com/Novolis-Platform/novolis-governance/blob/main/docs/platform-project-ref-mode.md). `LibraryReference` inverts that: the committed item *is* the dependency; expansion chooses project vs package at **evaluation time** (required for NuGet restore; a Target-added `ProjectReference` fails with `NETSDK1004`).
 
 ## Resolution
 

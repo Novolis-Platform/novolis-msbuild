@@ -10,6 +10,8 @@
 
 MSBuild package that provides a single `LibraryReference` item for dependencies that should use a local `ProjectReference` when the project exists, otherwise a `PackageReference`.
 
+Expansion runs at **evaluation time** so `dotnet restore` (including NuGet static-graph restore) sees the resulting references. Do not reintroduce a Target for this; Target-added `ProjectReference`s fail restore with `NETSDK1004`.
+
 ## Install
 
 ```xml
