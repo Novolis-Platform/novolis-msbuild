@@ -27,5 +27,5 @@ Props/targets-only NuGet package (`IncludeBuildOutput=false`, `DevelopmentDepend
 
 ## Non-goals (this repo)
 
-- Replacing org-wide ProjectReference mode or migrating all Novolis `PackageReference` trees
+- Migrating every existing Novolis `PackageReference` to `LibraryReference` (governance already imports these targets for any project that declares the item)
 - Inventing transitive ProjectReferences for NuGet dependency graphs

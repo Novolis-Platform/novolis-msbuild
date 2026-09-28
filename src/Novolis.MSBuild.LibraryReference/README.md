@@ -12,7 +12,19 @@ MSBuild package that provides a single `LibraryReference` item for dependencies 
 
 Expansion runs at **evaluation time** so `dotnet restore` (including NuGet static-graph restore) sees the resulting references. Do not reintroduce a Target for this; Target-added `ProjectReference`s fail restore with `NETSDK1004`.
 
-## Install
+## Novolis workspace
+
+`Novolis.Packaging.targets` already imports these props and targets and sets `LibraryReferenceDefaultVersion` to `2026.1.*`. A Novolis repo only adds the item:
+
+```xml
+<ItemGroup>
+  <LibraryReference Include="Novolis.Math.Geometry" />
+</ItemGroup>
+```
+
+Do not `PackageReference` this package inside the workspace. Static-graph restore would miss the expanded references on the first pass.
+
+## Install (outside the workspace)
 
 ```xml
 <!-- Directory.Build.props or Directory.Packages.props + PackageReference -->
