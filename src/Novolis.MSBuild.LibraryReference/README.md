@@ -1,9 +1,7 @@
 <!-- novolis-pkg-brand:start -->
-<p align="center">
-  <a href="https://github.com/Novolis-Platform/novolis-msbuild">
-    <img src="https://raw.githubusercontent.com/Novolis-Platform/.github/main/brand/logo-icon.svg" width="72" alt="Novolis"/>
-  </a>
-</p>
+[![Novolis](https://raw.githubusercontent.com/Novolis-Platform/.github/main/brand/logo-icon.png)](https://novolis-platform.github.io/.github/novolis-msbuild/)
+
+[Novolis](https://github.com/Novolis-Platform) · [Docs](https://novolis-platform.github.io/.github/novolis-msbuild/) · [Source](https://github.com/Novolis-Platform/novolis-msbuild)
 <!-- novolis-pkg-brand:end -->
 
 # Novolis.MSBuild.LibraryReference
