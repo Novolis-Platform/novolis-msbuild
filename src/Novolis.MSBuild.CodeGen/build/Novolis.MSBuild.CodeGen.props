@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <NovolisCodeGenEnabled Condition="'$(NovolisCodeGenEnabled)' == ''">true</NovolisCodeGenEnabled>
+    <NovolisCodeGenRunOnBuild Condition="'$(NovolisCodeGenRunOnBuild)' == ''">true</NovolisCodeGenRunOnBuild>
+    <NovolisCodeGenRunOnPack Condition="'$(NovolisCodeGenRunOnPack)' == ''">false</NovolisCodeGenRunOnPack>
+    <NovolisCodeGenBeforeTargets Condition="'$(NovolisCodeGenBeforeTargets)' == ''">CoreCompile</NovolisCodeGenBeforeTargets>
+    <NovolisCodeGenToolReferenceResolveTarget Condition="'$(NovolisCodeGenToolReferenceResolveTarget)' == ''"></NovolisCodeGenToolReferenceResolveTarget>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <NovolisCodeGen>
+      <ToolProject></ToolProject>
+      <ToolReference></ToolReference>
+      <ToolPath></ToolPath>
+      <ToolCommand>dotnet</ToolCommand>
+      <ProjectArguments></ProjectArguments>
+      <Arguments>run generate</Arguments>
+      <VerifyArguments></VerifyArguments>
+      <WorkingDirectory>$(MSBuildProjectDirectory)</WorkingDirectory>
+      <InputFiles></InputFiles>
+      <OutputFiles></OutputFiles>
+      <RunOnBuild>$(NovolisCodeGenRunOnBuild)</RunOnBuild>
+      <RunOnPack>$(NovolisCodeGenRunOnPack)</RunOnPack>
+      <TimeoutMilliseconds>0</TimeoutMilliseconds>
+    </NovolisCodeGen>
+  </ItemDefinitionGroup>
+</Project>

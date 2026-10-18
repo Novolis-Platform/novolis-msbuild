@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <_NovolisToolReferenceTaskAssembly>$(MSBuildThisFileDirectory)Novolis.MSBuild.ToolReference.dll</_NovolisToolReferenceTaskAssembly>
+    <_NovolisToolReferenceTaskAssembly Condition="!Exists('$(_NovolisToolReferenceTaskAssembly)') and Exists('$(MSBuildThisFileDirectory)netstandard2.0\Novolis.MSBuild.ToolReference.dll')">$(MSBuildThisFileDirectory)netstandard2.0\Novolis.MSBuild.ToolReference.dll</_NovolisToolReferenceTaskAssembly>
+    <_NovolisToolReferenceTaskAssembly Condition="!Exists('$(_NovolisToolReferenceTaskAssembly)') and Exists('$(MSBuildThisFileDirectory)..\build\netstandard2.0\Novolis.MSBuild.ToolReference.dll')">$(MSBuildThisFileDirectory)..\build\netstandard2.0\Novolis.MSBuild.ToolReference.dll</_NovolisToolReferenceTaskAssembly>
+    <_NovolisToolReferenceTaskAssembly Condition="!Exists('$(_NovolisToolReferenceTaskAssembly)') and Exists('$(MSBuildThisFileDirectory)..\bin\$(Configuration)\netstandard2.0\Novolis.MSBuild.ToolReference.dll')">$(MSBuildThisFileDirectory)..\bin\$(Configuration)\netstandard2.0\Novolis.MSBuild.ToolReference.dll</_NovolisToolReferenceTaskAssembly>
+    <_NovolisToolReferenceTaskAssembly Condition="!Exists('$(_NovolisToolReferenceTaskAssembly)') and Exists('$(MSBuildThisFileDirectory)..\bin\Release\netstandard2.0\Novolis.MSBuild.ToolReference.dll')">$(MSBuildThisFileDirectory)..\bin\Release\netstandard2.0\Novolis.MSBuild.ToolReference.dll</_NovolisToolReferenceTaskAssembly>
+  </PropertyGroup>
+
+  <UsingTask TaskName="Novolis.MSBuild.ToolReference.ResolveToolReferenceTask"
+             AssemblyFile="$(_NovolisToolReferenceTaskAssembly)"
+             Condition="Exists('$(_NovolisToolReferenceTaskAssembly)')" />
+  <UsingTask TaskName="Novolis.MSBuild.ToolReference.RunToolReferenceTask"
+             AssemblyFile="$(_NovolisToolReferenceTaskAssembly)"
+             Condition="Exists('$(_NovolisToolReferenceTaskAssembly)')" />
+
+  <!--
+    Expand ToolReference after the consuming project's item groups have been
+    evaluated. NuGet imports buildTransitive targets during evaluation, so the
+    generated PackageDownload remains visible to static-graph restore.
+  -->
+  <ItemGroup Condition="'$(NovolisToolReferenceEnabled)' == 'true' and '@(ToolReference)' != ''">
+    <ToolReference Update="@(ToolReference->WithMetadataValue('Version', ''))">
+      <Version>$(NovolisToolReferenceDefaultVersion)</Version>
+    </ToolReference>
+    <_NovolisToolReferencePackage Include="@(ToolReference)" />
+    <_NovolisToolReferenceWithOverride Include="@(ToolReference)" />
+    <_NovolisToolReferenceWithOverride Remove="@(ToolReference->WithMetadataValue('VersionOverride', ''))" />
+    <_NovolisToolReferencePackage Update="@(_NovolisToolReferenceWithOverride)">
+      <Version>%(VersionOverride)</Version>
+    </_NovolisToolReferencePackage>
+  </ItemGroup>
+
+  <!--
+    PackAsTool packages cannot be PackageReference dependencies (NuGet emits
+    NU1212). PackageDownload restores the package into the global package
+    folder without treating it as a library dependency.
+  -->
+  <ItemGroup Condition="'$(NovolisToolReferenceEnabled)' == 'true' and '@(_NovolisToolReferencePackage)' != ''">
+    <_NovolisToolReferenceWithVersion Include="@(_NovolisToolReferencePackage)" />
+    <_NovolisToolReferenceWithVersion Remove="@(_NovolisToolReferencePackage->WithMetadataValue('Version', ''))" />
+    <PackageDownload Include="@(_NovolisToolReferenceWithVersion)"
+                    Version="%(Version)" />
+  </ItemGroup>
+
+  <Target Name="NovolisValidateToolReferences"
+          BeforeTargets="Restore;NovolisResolveToolReferences"
+          Condition="'$(NovolisToolReferenceEnabled)' == 'true' and '@(ToolReference)' != ''">
+    <Error
+      Condition="'%(ToolReference.Version)' == '' and '%(ToolReference.VersionOverride)' == ''"
+      Text="ToolReference '%(ToolReference.Identity)' must specify a concrete NuGet version or version range." />
+  </Target>
+
+  <Target Name="NovolisResolveToolReferences"
+          DependsOnTargets="ResolvePackageAssets"
+          Condition="'$(NovolisToolReferenceEnabled)' == 'true' and '@(ToolReference)' != '' and '$(DesignTimeBuild)' != 'true'">
+    <ResolveToolReferenceTask
+      ToolReferences="@(ToolReference)"
+      AssetsFilePath="$(ProjectAssetsFile)"
+      NuGetPackageRoot="$(NuGetPackageRoot)">
+      <Output TaskParameter="ResolvedTools" ItemName="NovolisResolvedToolReference" />
+    </ResolveToolReferenceTask>
+  </Target>
+
+  <Target Name="_NovolisExecuteToolReferences"
+          DependsOnTargets="NovolisResolveToolReferences"
+          Condition="'$(NovolisToolReferenceEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true'">
+    <RunToolReferenceTask
+      ToolPath="%(NovolisResolvedToolReference.Identity)"
+      Arguments="%(NovolisResolvedToolReference.Arguments)"
+      WorkingDirectory="%(NovolisResolvedToolReference.WorkingDirectory)"
+      Inputs="%(NovolisResolvedToolReference.Inputs)"
+      Outputs="%(NovolisResolvedToolReference.Outputs)"
+      TimeoutMilliseconds="%(NovolisResolvedToolReference.TimeoutMilliseconds)"
+      Condition="'$(NovolisRunAllToolReferences)' == 'true'
+        or ('$(NovolisToolReferenceRunForBuild)' == 'true' and '%(NovolisResolvedToolReference.RunOnBuild)' == 'true')
+        or ('$(NovolisToolReferenceRunForPack)' == 'true' and '%(NovolisResolvedToolReference.RunOnPack)' == 'true')" />
+  </Target>
+
+  <Target Name="NovolisRunToolReferences"
+          DependsOnTargets="NovolisResolveToolReferences"
+          Condition="'$(NovolisToolReferenceEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true'">
+    <RunToolReferenceTask
+      ToolPath="%(NovolisResolvedToolReference.Identity)"
+      Arguments="%(NovolisResolvedToolReference.Arguments)"
+      WorkingDirectory="%(NovolisResolvedToolReference.WorkingDirectory)"
+      Inputs="%(NovolisResolvedToolReference.Inputs)"
+      Outputs="%(NovolisResolvedToolReference.Outputs)"
+      TimeoutMilliseconds="%(NovolisResolvedToolReference.TimeoutMilliseconds)" />
+  </Target>
+
+  <Target Name="NovolisRunToolReferencesOnBuild"
+          BeforeTargets="CoreCompile"
+          DependsOnTargets="NovolisResolveToolReferences"
+          Condition="'$(NovolisToolReferenceEnabled)' == 'true' and '@(ToolReference->WithMetadataValue('RunOnBuild', 'true'))' != '' and '$(DesignTimeBuild)' != 'true'">
+    <RunToolReferenceTask
+      ToolPath="%(NovolisResolvedToolReference.Identity)"
+      Arguments="%(NovolisResolvedToolReference.Arguments)"
+      WorkingDirectory="%(NovolisResolvedToolReference.WorkingDirectory)"
+      Inputs="%(NovolisResolvedToolReference.Inputs)"
+      Outputs="%(NovolisResolvedToolReference.Outputs)"
+      TimeoutMilliseconds="%(NovolisResolvedToolReference.TimeoutMilliseconds)"
+      Condition="'%(NovolisResolvedToolReference.RunOnBuild)' == 'true'" />
+  </Target>
+
+  <Target Name="NovolisRunToolReferencesOnPack"
+          BeforeTargets="Pack"
+          DependsOnTargets="NovolisResolveToolReferences"
+          Condition="'$(NovolisToolReferenceEnabled)' == 'true' and '@(ToolReference->WithMetadataValue('RunOnPack', 'true'))' != '' and '$(DesignTimeBuild)' != 'true'">
+    <RunToolReferenceTask
+      ToolPath="%(NovolisResolvedToolReference.Identity)"
+      Arguments="%(NovolisResolvedToolReference.Arguments)"
+      WorkingDirectory="%(NovolisResolvedToolReference.WorkingDirectory)"
+      Inputs="%(NovolisResolvedToolReference.Inputs)"
+      Outputs="%(NovolisResolvedToolReference.Outputs)"
+      TimeoutMilliseconds="%(NovolisResolvedToolReference.TimeoutMilliseconds)"
+      Condition="'%(NovolisResolvedToolReference.RunOnPack)' == 'true'" />
+  </Target>
+
+  <Target Name="NovolisVerifyToolReferences"
+          DependsOnTargets="NovolisResolveToolReferences"
+          Condition="'$(NovolisToolReferenceEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true'">
+    <Message Importance="High"
+             Text="Resolved ToolReference: %(NovolisResolvedToolReference.ToolReferenceId) → %(NovolisResolvedToolReference.Identity)" />
+  </Target>
+</Project>

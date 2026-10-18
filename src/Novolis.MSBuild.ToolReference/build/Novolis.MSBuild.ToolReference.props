@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <NovolisToolReferenceEnabled Condition="'$(NovolisToolReferenceEnabled)' == ''">true</NovolisToolReferenceEnabled>
+    <!-- PackageDownload requires an explicit version or NuGet version range. -->
+    <NovolisToolReferenceDefaultVersion Condition="'$(NovolisToolReferenceDefaultVersion)' == ''"></NovolisToolReferenceDefaultVersion>
+    <NovolisToolReferenceAvailable>true</NovolisToolReferenceAvailable>
+    <NovolisCodeGenToolReferenceResolveTarget>NovolisResolveToolReferences</NovolisCodeGenToolReferenceResolveTarget>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ToolReference>
+      <Version></Version>
+      <VersionOverride></VersionOverride>
+      <ToolPath></ToolPath>
+      <Arguments></Arguments>
+      <WorkingDirectory>$(MSBuildProjectDirectory)</WorkingDirectory>
+      <Inputs></Inputs>
+      <Outputs></Outputs>
+      <RunOnBuild>false</RunOnBuild>
+      <RunOnPack>false</RunOnPack>
+      <TimeoutMilliseconds>0</TimeoutMilliseconds>
+    </ToolReference>
+  </ItemDefinitionGroup>
+
+</Project>

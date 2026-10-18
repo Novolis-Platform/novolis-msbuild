@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\..\src\Novolis.MSBuild.CodeGen\build\Novolis.MSBuild.CodeGen.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <NovolisCodeGen Include="Fixture">
+      <ToolProject>$(MSBuildProjectDirectory)\..\CodeGenTool\CodeGenTool.csproj</ToolProject>
+      <Arguments>&quot;$(MSBuildProjectDirectory)\input.txt&quot; &quot;$(MSBuildProjectDirectory)\generated.txt&quot;</Arguments>
+      <WorkingDirectory>$(MSBuildProjectDirectory)</WorkingDirectory>
+      <InputFiles>$(MSBuildProjectDirectory)\input.txt</InputFiles>
+      <OutputFiles>$(MSBuildProjectDirectory)\generated.txt</OutputFiles>
+    </NovolisCodeGen>
+  </ItemGroup>
+
+  <Import Project="..\..\..\src\Novolis.MSBuild.CodeGen\build\Novolis.MSBuild.CodeGen.targets" />
+</Project>

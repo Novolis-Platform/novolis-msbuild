@@ -1,8 +1,24 @@
 {
   "packages": {
+    "Novolis.MSBuild.BuildReference": {
+      "path": "src/Novolis.MSBuild.BuildReference",
+      "description": "Evaluation-time build-only package references"
+    },
+    "Novolis.MSBuild.CodeGen": {
+      "path": "src/Novolis.MSBuild.CodeGen",
+      "description": "Incremental MSBuild lifecycle for file-generating code"
+    },
     "Novolis.MSBuild.LibraryReference": {
       "path": "src/Novolis.MSBuild.LibraryReference",
       "description": "LibraryReference MSBuild item (project if present, else package)"
+    },
+    "Novolis.MSBuild.Packaging": {
+      "path": "src/Novolis.MSBuild.Packaging",
+      "description": "README, icon, documentation, and package-content conventions"
+    },
+    "Novolis.MSBuild.ToolReference": {
+      "path": "src/Novolis.MSBuild.ToolReference",
+      "description": "Executable tool references and incremental MSBuild tool invocation"
     }
   }
 }

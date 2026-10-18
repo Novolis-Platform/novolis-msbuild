@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!--
+    Expand BuildReference during evaluation so NuGet restore sees the resulting
+    PackageReference. This item is deliberately package-only: build targets and
+    tasks are imported from the package and must not become ProjectReferences.
+  -->
+  <PropertyGroup>
+    <BuildReferenceEnabled Condition="'$(BuildReferenceEnabled)' == ''">true</BuildReferenceEnabled>
+    <BuildReferenceDefaultVersion Condition="'$(BuildReferenceDefaultVersion)' == ''">*</BuildReferenceDefaultVersion>
+  </PropertyGroup>
+
+  <!-- Expand after project item groups so restore sees the generated reference. -->
+  <ItemGroup Condition="'$(BuildReferenceEnabled)' == 'true' and '@(BuildReference)' != ''">
+    <_NovolisBrExplicitVersion Include="@(BuildReference)" />
+    <_NovolisBrExplicitVersion Remove="@(BuildReference->WithMetadataValue('Version', ''))" />
+    <_NovolisBrExplicitOverride Include="@(BuildReference)" />
+    <_NovolisBrExplicitOverride Remove="@(BuildReference->WithMetadataValue('VersionOverride', ''))" />
+    <_NovolisBrExplicitOverride Update="@(_NovolisBrExplicitOverride)">
+      <Version>%(VersionOverride)</Version>
+    </_NovolisBrExplicitOverride>
+
+    <BuildReference Update="@(BuildReference->WithMetadataValue('Version', ''))">
+      <Version>$(BuildReferenceDefaultVersion)</Version>
+    </BuildReference>
+
+    <_NovolisBrAsPackage Include="@(BuildReference)" />
+    <_NovolisBrAsPackage Update="@(_NovolisBrExplicitOverride)">
+      <Version>%(VersionOverride)</Version>
+    </_NovolisBrAsPackage>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(BuildReferenceEnabled)' == 'true' and '@(_NovolisBrAsPackage)' != '' and '$(ManagePackageVersionsCentrally)' != 'true'">
+    <PackageReference Include="@(_NovolisBrAsPackage)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(BuildReferenceEnabled)' == 'true' and '@(_NovolisBrAsPackage)' != '' and '$(ManagePackageVersionsCentrally)' == 'true'">
+    <_NovolisBrExistingCentral Include="@(PackageVersion)" />
+    <_NovolisBrNeedPackageVersion Include="@(_NovolisBrAsPackage)" />
+    <_NovolisBrNeedPackageVersion Remove="@(_NovolisBrExistingCentral)" />
+    <_NovolisBrNeedPackageVersion Remove="@(_NovolisBrExplicitVersion)" />
+    <_NovolisBrNeedPackageVersion Remove="@(_NovolisBrExplicitOverride)" />
+    <PackageVersion Remove="@(_NovolisBrExplicitVersion)" />
+    <PackageVersion Remove="@(_NovolisBrExplicitOverride)" />
+    <PackageVersion Include="@(_NovolisBrExplicitVersion)" />
+    <PackageVersion Include="@(_NovolisBrExplicitOverride)" />
+    <PackageVersion Include="@(_NovolisBrNeedPackageVersion)" />
+    <_NovolisBrAsPackage Update="@(_NovolisBrAsPackage)">
+      <Version></Version>
+    </_NovolisBrAsPackage>
+    <PackageReference Include="@(_NovolisBrAsPackage)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(BuildReferenceEnabled)' == 'true' and '@(BuildReference)' != ''">
+    <BuildReference Remove="@(BuildReference)" />
+    <_NovolisBrExplicitVersion Remove="@(_NovolisBrExplicitVersion)" />
+    <_NovolisBrExplicitOverride Remove="@(_NovolisBrExplicitOverride)" />
+    <_NovolisBrExistingCentral Remove="@(_NovolisBrExistingCentral)" />
+    <_NovolisBrAsPackage Remove="@(_NovolisBrAsPackage)" />
+    <_NovolisBrNeedPackageVersion Remove="@(_NovolisBrNeedPackageVersion)" />
+  </ItemGroup>
+</Project>

@@ -6,7 +6,11 @@
 
 | Package | Install | Package README |
 |---------|---------|----------------|
+| `Novolis.MSBuild.BuildReference` | `dotnet add package Novolis.MSBuild.BuildReference` | [README](https://github.com/Novolis-Platform/novolis-msbuild/blob/main/src/Novolis.MSBuild.BuildReference/README.md) |
+| `Novolis.MSBuild.CodeGen` | `dotnet add package Novolis.MSBuild.CodeGen` | [README](https://github.com/Novolis-Platform/novolis-msbuild/blob/main/src/Novolis.MSBuild.CodeGen/README.md) |
 | `Novolis.MSBuild.LibraryReference` | `dotnet add package Novolis.MSBuild.LibraryReference` | [README](https://github.com/Novolis-Platform/novolis-msbuild/blob/main/src/Novolis.MSBuild.LibraryReference/README.md) |
+| `Novolis.MSBuild.Packaging` | `dotnet add package Novolis.MSBuild.Packaging` | [README](https://github.com/Novolis-Platform/novolis-msbuild/blob/main/src/Novolis.MSBuild.Packaging/README.md) |
+| `Novolis.MSBuild.ToolReference` | `dotnet add package Novolis.MSBuild.ToolReference` | [README](https://github.com/Novolis-Platform/novolis-msbuild/blob/main/src/Novolis.MSBuild.ToolReference/README.md) |
 
 For NuGet.org and Visual Studio, the **embedded** README.md inside each package is authoritative.
 

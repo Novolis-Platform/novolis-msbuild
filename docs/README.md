@@ -16,7 +16,11 @@ Published docs: [https://novolis-platform.github.io/.github/novolis-msbuild/](ht
 
 | Package |
 | --- |
+| `Novolis.MSBuild.BuildReference` |
+| `Novolis.MSBuild.CodeGen` |
 | `Novolis.MSBuild.LibraryReference` |
+| `Novolis.MSBuild.Packaging` |
+| `Novolis.MSBuild.ToolReference` |
 
 ## More
 

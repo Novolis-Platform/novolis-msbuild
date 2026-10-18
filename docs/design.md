@@ -25,7 +25,23 @@ No filesystem crawl. Paths come from explicit metadata or `LibraryProjectMap` (s
 
 Props/targets-only NuGet package (`IncludeBuildOutput=false`, `DevelopmentDependency=true`). Auto-imported from `build/` and `buildTransitive/` when referenced.
 
+The repository also publishes opt-in build infrastructure packages:
+
+- `Novolis.MSBuild.BuildReference` expands private build-only package items at evaluation time.
+- `Novolis.MSBuild.CodeGen` owns the incremental MSBuild lifecycle around repository-owned generators.
+- `Novolis.MSBuild.Packaging` owns reusable README, icon, documentation, and package-contract behavior.
+- `Novolis.MSBuild.ToolReference` restores and invokes published executable tool packages without adding compile/runtime assets.
+
+`ToolReference` does not publish tools. `PackAsTool` projects remain in
+`novolis-tools`, and the tool package is restored from the configured NuGet
+sources.
+
+When the platform meta-solution resolves these packages as local project
+references, governance imports the matching source `build/` assets so the
+project-reference graph keeps the same MSBuild behavior as the NuGet package.
+
 ## Non-goals (this repo)
 
 - Migrating every existing Novolis `PackageReference` to `LibraryReference` (governance already imports these targets for any project that declares the item)
 - Inventing transitive ProjectReferences for NuGet dependency graphs
+- Owning version/release policy, package-to-project maps, layer rules, or native runtime-asset staging

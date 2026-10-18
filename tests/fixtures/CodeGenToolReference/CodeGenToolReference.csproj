@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\..\src\Novolis.MSBuild.ToolReference\build\Novolis.MSBuild.ToolReference.props" />
+  <Import Project="..\..\..\src\Novolis.MSBuild.CodeGen\build\Novolis.MSBuild.CodeGen.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ToolReference Include="Novolis.Solution.Tool"
+                   Version="[2026.1.1.90]"
+                   ToolPath="tools/net10.0/any/Novolis.Solution.Tool.dll" />
+    <NovolisCodeGen Include="PublishedTool">
+      <ToolReference>Novolis.Solution.Tool</ToolReference>
+      <Arguments>--help</Arguments>
+      <InputFiles>$(MSBuildProjectFullPath)</InputFiles>
+      <OutputFiles>$(IntermediateOutputPath)published-tool.stamp</OutputFiles>
+    </NovolisCodeGen>
+  </ItemGroup>
+
+  <Import Project="..\..\..\src\Novolis.MSBuild.CodeGen\build\Novolis.MSBuild.CodeGen.targets" />
+  <Import Project="..\..\..\src\Novolis.MSBuild.ToolReference\build\Novolis.MSBuild.ToolReference.targets" />
+</Project>

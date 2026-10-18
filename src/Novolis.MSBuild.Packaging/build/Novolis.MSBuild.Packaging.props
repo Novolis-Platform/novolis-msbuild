@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <NovolisPackagingEnabled Condition="'$(NovolisPackagingEnabled)' == '' and '$(NovolisPackagingUseGovernanceContract)' != 'true'">true</NovolisPackagingEnabled>
+    <PackageReadmeFile Condition="'$(PackageReadmeFile)' == ''">README.md</PackageReadmeFile>
+    <GenerateDocumentationFile Condition="'$(GenerateDocumentationFile)' == ''">true</GenerateDocumentationFile>
+
+    <Authors Condition="'$(Authors)' == ''">Novolis</Authors>
+    <Company Condition="'$(Company)' == ''">Novolis</Company>
+    <Copyright Condition="'$(Copyright)' == ''">Copyright (c) Novolis-Platform</Copyright>
+    <PackageLicenseExpression Condition="'$(PackageLicenseExpression)' == ''">MIT</PackageLicenseExpression>
+    <RepositoryType Condition="'$(RepositoryType)' == ''">git</RepositoryType>
+    <RepositoryUrl Condition="'$(RepositoryUrl)' == '' and '$(NovolisGitHubRepository)' != ''">https://github.com/Novolis-Platform/$(NovolisGitHubRepository)</RepositoryUrl>
+    <PackageProjectUrl Condition="'$(PackageProjectUrl)' == '' and '$(NovolisGitHubRepository)' != ''">https://novolis-platform.github.io/.github/$(NovolisGitHubRepository)/</PackageProjectUrl>
+
+    <_NovolisPackageReadmePath>$(MSBuildProjectDirectory)\README.md</_NovolisPackageReadmePath>
+    <_NovolisPackageIconPath Condition="'$(_NovolisPackageIconPath)' == ''">$([MSBuild]::GetPathOfFileAbove('icon.png', '$(MSBuildProjectDirectory)'))</_NovolisPackageIconPath>
+    <_NovolisApplicationIconPath Condition="'$(_NovolisApplicationIconPath)' == ''">$([MSBuild]::GetPathOfFileAbove('icon.ico', '$(MSBuildProjectDirectory)'))</_NovolisApplicationIconPath>
+    <PackageIcon Condition="'$(PackageIcon)' == '' and '$(_NovolisPackageIconPath)' != ''">icon.png</PackageIcon>
+    <ApplicationIcon Condition="'$(ApplicationIcon)' == '' and '$(_NovolisApplicationIconPath)' != ''">$(_NovolisApplicationIconPath)</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(NovolisPackagingEnabled)' == 'true' and '$(_NovolisPackageReadmePath)' != ''">
+    <None Remove="README.md"
+          Condition="Exists('$(_NovolisPackageReadmePath)')" />
+    <None Include="README.md"
+          Pack="true"
+          PackagePath="\"
+          Condition="Exists('$(_NovolisPackageReadmePath)')" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(NovolisPackagingEnabled)' == 'true' and '$(_NovolisPackageIconPath)' != '' and '$(PackageIcon)' == 'icon.png'">
+    <None Remove="$(_NovolisPackageIconPath)"
+          Condition="Exists('$(_NovolisPackageIconPath)')" />
+    <None Include="$(_NovolisPackageIconPath)"
+          Pack="true"
+          PackagePath="\"
+          Link="icon.png"
+          Visible="false"
+          Condition="Exists('$(_NovolisPackageIconPath)')" />
+  </ItemGroup>
+</Project>

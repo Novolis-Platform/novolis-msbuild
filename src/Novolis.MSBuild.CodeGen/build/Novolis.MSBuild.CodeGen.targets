@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <NovolisCodeGenEnabled Condition="'$(NovolisCodeGenEnabled)' == ''">true</NovolisCodeGenEnabled>
+    <NovolisCodeGenBeforeTargets Condition="'$(NovolisCodeGenBeforeTargets)' == ''">CoreCompile</NovolisCodeGenBeforeTargets>
+  </PropertyGroup>
+
+  <Target Name="NovolisGenerateCode"
+          BeforeTargets="$(NovolisCodeGenBeforeTargets)"
+          DependsOnTargets="$(NovolisCodeGenToolReferenceResolveTarget)"
+          Inputs="@(NovolisCodeGen->'%(InputFiles)');@(NovolisCodeGen->'%(ToolProject)')"
+          Outputs="@(NovolisCodeGen->'%(OutputFiles)')"
+          Condition="'$(NovolisCodeGenEnabled)' == 'true'
+            and '@(NovolisCodeGen)' != ''
+            and '$(DesignTimeBuild)' != 'true'
+            and (('$(IsPacking)' != 'true' and '@(NovolisCodeGen->WithMetadataValue('RunOnBuild', 'true'))' != '')
+              or ('$(IsPacking)' == 'true' and '@(NovolisCodeGen->WithMetadataValue('RunOnPack', 'true'))' != ''))">
+    <ItemGroup>
+      <_NovolisCodeGenOutput Include="@(NovolisCodeGen->'%(OutputFiles)')" />
+      <FileWrites Include="@(_NovolisCodeGenOutput)" />
+    </ItemGroup>
+
+    <Exec
+      Command="dotnet run --project &quot;%(NovolisCodeGen.ToolProject)&quot;%(NovolisCodeGen.ProjectArguments) -- %(NovolisCodeGen.Arguments)"
+      WorkingDirectory="%(NovolisCodeGen.WorkingDirectory)"
+      StandardOutputImportance="high"
+      StandardErrorImportance="high"
+      Condition="'$(IsPacking)' != 'true'
+        and '%(NovolisCodeGen.RunOnBuild)' == 'true'
+        and '%(NovolisCodeGen.ToolProject)' != ''" />
+
+    <Exec
+      Command="%(NovolisCodeGen.ToolCommand) &quot;%(NovolisCodeGen.ToolPath)&quot; %(NovolisCodeGen.Arguments)"
+      WorkingDirectory="%(NovolisCodeGen.WorkingDirectory)"
+      StandardOutputImportance="high"
+      StandardErrorImportance="high"
+      Condition="'%(NovolisCodeGen.RunOnBuild)' == 'true'
+        and '$(IsPacking)' != 'true'
+        and '%(NovolisCodeGen.ToolProject)' == ''
+        and '%(NovolisCodeGen.ToolPath)' != ''" />
+
+    <!--
+      A CodeGen item and its resolved ToolReference are separate item lists.
+      MSBuild has no general item join, so invoke a small project target once
+      per packaged CodeGen declaration and perform the metadata match there.
+    -->
+    <MSBuild
+      Projects="$(MSBuildProjectFullPath)"
+      Targets="_NovolisRunCodeGenToolReference"
+      BuildInParallel="false"
+      Properties="NovolisCodeGenIdentity=%(NovolisCodeGen.Identity);BuildProjectReferences=false;DesignTimeBuild=false"
+      Condition="'$(IsPacking)' != 'true'
+        and '%(NovolisCodeGen.RunOnBuild)' == 'true'
+        and '%(NovolisCodeGen.ToolProject)' == ''
+        and '%(NovolisCodeGen.ToolPath)' == ''
+        and '%(NovolisCodeGen.ToolReference)' != ''" />
+  </Target>
+
+  <Target Name="_NovolisRunCodeGenToolReference"
+          DependsOnTargets="$(NovolisCodeGenToolReferenceResolveTarget)"
+          Condition="'$(NovolisCodeGenEnabled)' == 'true'
+            and '$(DesignTimeBuild)' != 'true'
+            and '$(NovolisCodeGenIdentity)' != ''">
+    <ItemGroup>
+      <_NovolisSelectedCodeGen Include="@(NovolisCodeGen)"
+                               Condition="'%(Identity)' == '$(NovolisCodeGenIdentity)'" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_NovolisSelectedToolReferenceId>%(_NovolisSelectedCodeGen.ToolReference)</_NovolisSelectedToolReferenceId>
+    </PropertyGroup>
+    <ItemGroup>
+      <_NovolisSelectedTool Include="@(NovolisResolvedToolReference)"
+                            Condition="'%(NovolisResolvedToolReference.ToolReferenceId)' == '$(_NovolisSelectedToolReferenceId)'" />
+    </ItemGroup>
+
+    <RunToolReferenceTask
+      ToolPath="%(_NovolisSelectedTool.Identity)"
+      Arguments="%(_NovolisSelectedCodeGen.Arguments)"
+      WorkingDirectory="%(_NovolisSelectedCodeGen.WorkingDirectory)"
+      Inputs="%(_NovolisSelectedCodeGen.InputFiles)"
+      Outputs="%(_NovolisSelectedCodeGen.OutputFiles)"
+      TimeoutMilliseconds="%(_NovolisSelectedCodeGen.TimeoutMilliseconds)"
+      Condition="'%(_NovolisSelectedTool.Identity)' != ''" />
+  </Target>
+
+  <Target Name="NovolisGenerateCodeOnPack"
+          BeforeTargets="Pack"
+          DependsOnTargets="NovolisGenerateCode"
+          Condition="'$(NovolisCodeGenEnabled)' == 'true'
+            and '$(DesignTimeBuild)' != 'true'
+            and '@(NovolisCodeGen->WithMetadataValue('RunOnPack', 'true'))' != ''">
+  </Target>
+
+  <Target Name="NovolisVerifyCodeGen"
+          DependsOnTargets="NovolisGenerateCode"
+          Condition="'$(NovolisCodeGenEnabled)' == 'true' and '@(NovolisCodeGen)' != '' and '$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_NovolisCodeGenOutput Include="@(NovolisCodeGen->'%(OutputFiles)')" />
+    </ItemGroup>
+
+    <Error
+      Condition="'%(_NovolisCodeGenOutput.Identity)' != '' and !Exists('%(_NovolisCodeGenOutput.Identity)')"
+      Text="CodeGen output is missing: %(_NovolisCodeGenOutput.Identity)" />
+
+    <Exec
+      Command="dotnet run --project &quot;%(NovolisCodeGen.ToolProject)&quot;%(NovolisCodeGen.ProjectArguments) -- %(NovolisCodeGen.VerifyArguments)"
+      WorkingDirectory="%(NovolisCodeGen.WorkingDirectory)"
+      StandardOutputImportance="high"
+      StandardErrorImportance="high"
+      Condition="'%(NovolisCodeGen.VerifyArguments)' != '' and '%(NovolisCodeGen.ToolProject)' != ''" />
+
+    <Exec
+      Command="%(NovolisCodeGen.ToolCommand) &quot;%(NovolisCodeGen.ToolPath)&quot; %(NovolisCodeGen.VerifyArguments)"
+      WorkingDirectory="%(NovolisCodeGen.WorkingDirectory)"
+      StandardOutputImportance="high"
+      StandardErrorImportance="high"
+      Condition="'%(NovolisCodeGen.VerifyArguments)' != ''
+        and '%(NovolisCodeGen.ToolProject)' == ''
+        and '%(NovolisCodeGen.ToolPath)' != ''" />
+
+    <MSBuild
+      Projects="$(MSBuildProjectFullPath)"
+      Targets="_NovolisVerifyCodeGenToolReference"
+      BuildInParallel="false"
+      Properties="NovolisCodeGenIdentity=%(NovolisCodeGen.Identity);BuildProjectReferences=false;DesignTimeBuild=false"
+      Condition="'%(NovolisCodeGen.VerifyArguments)' != ''
+        and '%(NovolisCodeGen.ToolProject)' == ''
+        and '%(NovolisCodeGen.ToolPath)' == ''
+        and '%(NovolisCodeGen.ToolReference)' != ''" />
+  </Target>
+
+  <Target Name="_NovolisVerifyCodeGenToolReference"
+          DependsOnTargets="$(NovolisCodeGenToolReferenceResolveTarget)"
+          Condition="'$(NovolisCodeGenEnabled)' == 'true'
+            and '$(DesignTimeBuild)' != 'true'
+            and '$(NovolisCodeGenIdentity)' != ''">
+    <ItemGroup>
+      <_NovolisSelectedCodeGen Include="@(NovolisCodeGen)"
+                               Condition="'%(Identity)' == '$(NovolisCodeGenIdentity)'" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_NovolisSelectedToolReferenceId>%(_NovolisSelectedCodeGen.ToolReference)</_NovolisSelectedToolReferenceId>
+    </PropertyGroup>
+    <ItemGroup>
+      <_NovolisSelectedTool Include="@(NovolisResolvedToolReference)"
+                            Condition="'%(NovolisResolvedToolReference.ToolReferenceId)' == '$(_NovolisSelectedToolReferenceId)'" />
+    </ItemGroup>
+
+    <RunToolReferenceTask
+      ToolPath="%(_NovolisSelectedTool.Identity)"
+      Arguments="%(_NovolisSelectedCodeGen.VerifyArguments)"
+      WorkingDirectory="%(_NovolisSelectedCodeGen.WorkingDirectory)"
+      TimeoutMilliseconds="%(_NovolisSelectedCodeGen.TimeoutMilliseconds)"
+      Condition="'%(_NovolisSelectedTool.Identity)' != ''" />
+  </Target>
+</Project>

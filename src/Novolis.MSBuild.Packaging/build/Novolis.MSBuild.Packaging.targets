@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <NovolisPackagingEnabled Condition="'$(NovolisPackagingEnabled)' == '' and '$(NovolisPackagingUseGovernanceContract)' != 'true'">true</NovolisPackagingEnabled>
+  </PropertyGroup>
+
+  <Target Name="_NovolisPackagingRequirePackageReadme"
+          BeforeTargets="PrepareForBuild;Pack"
+          Condition="'$(NovolisPackagingEnabled)' == 'true' and '$(IsPackable)' == 'true' and !Exists('$(_NovolisPackageReadmePath)')">
+    <Error Text="Packable project requires README.md next to the .csproj: $(_NovolisPackageReadmePath)" />
+  </Target>
+
+  <Target Name="NovolisPackageContractMetadata"
+          BeforeTargets="GenerateNuspec"
+          Condition="'$(NovolisPackagingEnabled)' == 'true' and '$(IsPackable)' == 'true'">
+    <PropertyGroup>
+      <RepositoryType Condition="'$(RepositoryType)' == ''">git</RepositoryType>
+      <Authors Condition="'$(Authors)' == ''">Novolis</Authors>
+      <Company Condition="'$(Company)' == ''">Novolis</Company>
+      <Copyright Condition="'$(Copyright)' == ''">Copyright (c) Novolis-Platform</Copyright>
+      <PackageLicenseExpression Condition="'$(PackageLicenseExpression)' == ''">MIT</PackageLicenseExpression>
+      <PackageTags Condition="'$(PackageTags)' == '' and '$(PackageId)' != ''">novolis $([System.String]::Copy('$(PackageId)').Replace('Novolis.','').Replace('.',' ').ToLowerInvariant())</PackageTags>
+    </PropertyGroup>
+
+    <ReadLinesFromFile File="$(_NovolisPackageReadmePath)"
+                       Condition="Exists('$(_NovolisPackageReadmePath)')">
+      <Output TaskParameter="Lines" ItemName="_NovolisPackageReadmeLine" />
+    </ReadLinesFromFile>
+    <ItemGroup Condition="'$(Description)' == '' or '$(Description)' == 'Package Description'">
+      <_NovolisPackageReadmeProse Include="@(_NovolisPackageReadmeLine)"
+                                   Condition="$([System.String]::Copy('%(Identity)').Trim().Length) &gt; 40
+                                     and !$([System.String]::Copy('%(Identity)').Trim().StartsWith('#'))
+                                     and !$([System.String]::Copy('%(Identity)').Trim().StartsWith('&lt;'))
+                                     and !$([System.String]::Copy('%(Identity)').Trim().StartsWith('!'))
+                                     and !$([System.String]::Copy('%(Identity)').Trim().StartsWith('['))
+                                     and !$([System.String]::Copy('%(Identity)').Trim().StartsWith('`'))
+                                     and !$([System.String]::Copy('%(Identity)').Trim().StartsWith('|'))
+                                     and !$([System.String]::Copy('%(Identity)').Trim().StartsWith('-'))" />
+    </ItemGroup>
+    <PropertyGroup Condition="'$(Description)' == '' or '$(Description)' == 'Package Description'">
+      <_NovolisPackageReadmeJoined Condition="'@(_NovolisPackageReadmeProse)' != ''">@(_NovolisPackageReadmeProse, '|')</_NovolisPackageReadmeJoined>
+      <Description Condition="'$(_NovolisPackageReadmeJoined)' != ''">$([System.String]::Copy('$(_NovolisPackageReadmeJoined)').Split('|')[0].Trim())</Description>
+      <Description Condition="'$(Description)' == '' or '$(Description)' == 'Package Description'">$(PackageId) for the Novolis platform.</Description>
+      <PackageDescription>$(Description)</PackageDescription>
+    </PropertyGroup>
+  </Target>
+</Project>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <BuildReferenceEnabled Condition="'$(BuildReferenceEnabled)' == ''">true</BuildReferenceEnabled>
+    <BuildReferenceDefaultVersion Condition="'$(BuildReferenceDefaultVersion)' == ''">*</BuildReferenceDefaultVersion>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <BuildReference>
+      <Version></Version>
+      <VersionOverride></VersionOverride>
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <ExcludeAssets></ExcludeAssets>
+      <GeneratePathProperty></GeneratePathProperty>
+    </BuildReference>
+  </ItemDefinitionGroup>
+</Project>
