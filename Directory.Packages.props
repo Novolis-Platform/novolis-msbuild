@@ -4,7 +4,10 @@
     <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.401" />
-    <PackageVersion Include="TUnit" Version="1.72.16" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.402" />
+    <PackageVersion Include="Microsoft.Build.Framework" Version="18.11.0" />
+    <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="18.11.0" />
+    <PackageVersion Include="TUnit" Version="1.75.0" />
   </ItemGroup>
 </Project>
+
