@@ -6,7 +6,8 @@
   -->
   <PropertyGroup>
     <LibraryReferenceEnabled Condition="'$(LibraryReferenceEnabled)' == ''">true</LibraryReferenceEnabled>
-    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == ''">*</LibraryReferenceDefaultVersion>
+    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == '' and '$(NovolisPlatformVersion)' != ''">$(NovolisPlatformVersion)</LibraryReferenceDefaultVersion>
+    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == ''">2026.1.1</LibraryReferenceDefaultVersion>
   </PropertyGroup>
 
   <ItemDefinitionGroup>

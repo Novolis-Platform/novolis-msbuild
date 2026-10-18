@@ -19,7 +19,8 @@
 
   <PropertyGroup>
     <LibraryReferenceEnabled Condition="'$(LibraryReferenceEnabled)' == ''">true</LibraryReferenceEnabled>
-    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == ''">*</LibraryReferenceDefaultVersion>
+    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == '' and '$(NovolisPlatformVersion)' != ''">$(NovolisPlatformVersion)</LibraryReferenceDefaultVersion>
+    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == ''">2026.1.1</LibraryReferenceDefaultVersion>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(LibraryReferenceEnabled)' == 'true' and '@(LibraryReference)' != ''">
@@ -37,13 +38,14 @@
     </LibraryReference>
 
     <LibraryReference Update="@(LibraryReference)">
-      <_NovolisLrExists>$([System.IO.File]::Exists('%(ProjectPath)'))</_NovolisLrExists>
+      <_NovolisLrNormalizedPath>$([System.String]::Copy('%(ProjectPath)').Replace('\', '/'))</_NovolisLrNormalizedPath>
+      <_NovolisLrExists>$([System.IO.File]::Exists('%(_NovolisLrNormalizedPath)'))</_NovolisLrExists>
     </LibraryReference>
 
     <_NovolisLrAsProject Include="@(LibraryReference->WithMetadataValue('_NovolisLrExists', 'True'))" />
     <_NovolisLrAsPackage Include="@(LibraryReference->WithMetadataValue('_NovolisLrExists', 'False'))" />
 
-    <ProjectReference Include="@(_NovolisLrAsProject->'%(ProjectPath)')" />
+    <ProjectReference Include="@(_NovolisLrAsProject->'%(_NovolisLrNormalizedPath)')" />
     <ProjectReference Remove="$(MSBuildProjectFullPath)" />
   </ItemGroup>
 
