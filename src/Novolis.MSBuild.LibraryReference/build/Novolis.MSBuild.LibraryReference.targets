@@ -19,8 +19,9 @@
 
   <PropertyGroup>
     <LibraryReferenceEnabled Condition="'$(LibraryReferenceEnabled)' == ''">true</LibraryReferenceEnabled>
-    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == '' and '$(NovolisPlatformVersion)' != ''">$(NovolisPlatformVersion)</LibraryReferenceDefaultVersion>
-    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == ''">2026.1.1</LibraryReferenceDefaultVersion>
+    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == '' and '$(NovolisPackageFloatVersion)' != ''">$(NovolisPackageFloatVersion)</LibraryReferenceDefaultVersion>
+    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == '' and '$(NovolisYear)' != '' and '$(NovolisMajor)' != ''">$(NovolisYear).$(NovolisMajor).*</LibraryReferenceDefaultVersion>
+    <LibraryReferenceDefaultVersion Condition="'$(LibraryReferenceDefaultVersion)' == ''">2026.1.*</LibraryReferenceDefaultVersion>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(LibraryReferenceEnabled)' == 'true' and '@(LibraryReference)' != ''">
