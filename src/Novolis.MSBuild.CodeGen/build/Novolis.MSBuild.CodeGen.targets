@@ -3,6 +3,15 @@
   <PropertyGroup>
     <NovolisCodeGenEnabled Condition="'$(NovolisCodeGenEnabled)' == ''">true</NovolisCodeGenEnabled>
     <NovolisCodeGenBeforeTargets Condition="'$(NovolisCodeGenBeforeTargets)' == ''">CoreCompile</NovolisCodeGenBeforeTargets>
+    <!--
+      Nested "dotnet run" inherits MSBuildSDKsPath from the parent SDK. A parent on a
+      different SDK (for example the 11 preview, when global.json was not in the
+      caller's working directory) then loads that SDK's tasks into the tool's SDK
+      and the task host fails with MSB4216. Drop the inherited paths so the tool
+      build uses the SDK selected from its working directory.
+    -->
+    <_NovolisCodeGenSdkIsolationPrefix Condition="$([MSBuild]::IsOSPlatform('Windows'))">set "MSBuildSDKsPath="&amp; set "MSBuildExtensionsPath="&amp; set "MSBuildUserExtensionsPath="&amp; </_NovolisCodeGenSdkIsolationPrefix>
+    <_NovolisCodeGenSdkIsolationPrefix Condition="'$(_NovolisCodeGenSdkIsolationPrefix)' == ''">env -u MSBuildSDKsPath -u MSBuildExtensionsPath -u MSBuildUserExtensionsPath </_NovolisCodeGenSdkIsolationPrefix>
   </PropertyGroup>
 
   <Target Name="NovolisGenerateCode"
@@ -21,7 +30,7 @@
     </ItemGroup>
 
     <Exec
-      Command="dotnet run --project &quot;%(NovolisCodeGen.ToolProject)&quot;%(NovolisCodeGen.ProjectArguments) -- %(NovolisCodeGen.Arguments)"
+      Command="$(_NovolisCodeGenSdkIsolationPrefix)dotnet run --project &quot;%(NovolisCodeGen.ToolProject)&quot;%(NovolisCodeGen.ProjectArguments) -- %(NovolisCodeGen.Arguments)"
       WorkingDirectory="%(NovolisCodeGen.WorkingDirectory)"
       StandardOutputImportance="high"
       StandardErrorImportance="high"
@@ -103,7 +112,7 @@
       Text="CodeGen output is missing: %(_NovolisCodeGenOutput.Identity)" />
 
     <Exec
-      Command="dotnet run --project &quot;%(NovolisCodeGen.ToolProject)&quot;%(NovolisCodeGen.ProjectArguments) -- %(NovolisCodeGen.VerifyArguments)"
+      Command="$(_NovolisCodeGenSdkIsolationPrefix)dotnet run --project &quot;%(NovolisCodeGen.ToolProject)&quot;%(NovolisCodeGen.ProjectArguments) -- %(NovolisCodeGen.VerifyArguments)"
       WorkingDirectory="%(NovolisCodeGen.WorkingDirectory)"
       StandardOutputImportance="high"
       StandardErrorImportance="high"
