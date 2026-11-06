@@ -25,7 +25,13 @@
             and (('$(IsPacking)' != 'true' and '@(NovolisCodeGen->WithMetadataValue('RunOnBuild', 'true'))' != '')
               or ('$(IsPacking)' == 'true' and '@(NovolisCodeGen->WithMetadataValue('RunOnPack', 'true'))' != ''))">
     <ItemGroup>
-      <_NovolisCodeGenOutput Include="@(NovolisCodeGen->'%(OutputFiles)')" />
+      <!--
+        OutputFiles metadata is a semicolon-joined path list. Use %(Metadata) in Include
+        so MSBuild splits into one item per path. The transform @(Item->'%(OutputFiles)')
+        keeps the joined string as a single Identity, which Full Framework MSBuild then
+        rejects in FileWrites (MSB3541: path format not supported).
+      -->
+      <_NovolisCodeGenOutput Include="%(NovolisCodeGen.OutputFiles)" Condition="'%(NovolisCodeGen.OutputFiles)' != ''" />
       <FileWrites Include="@(_NovolisCodeGenOutput)" />
     </ItemGroup>
 
@@ -104,7 +110,7 @@
           DependsOnTargets="NovolisGenerateCode"
           Condition="'$(NovolisCodeGenEnabled)' == 'true' and '@(NovolisCodeGen)' != '' and '$(DesignTimeBuild)' != 'true'">
     <ItemGroup>
-      <_NovolisCodeGenOutput Include="@(NovolisCodeGen->'%(OutputFiles)')" />
+      <_NovolisCodeGenOutput Include="%(NovolisCodeGen.OutputFiles)" Condition="'%(NovolisCodeGen.OutputFiles)' != ''" />
     </ItemGroup>
 
     <Error
